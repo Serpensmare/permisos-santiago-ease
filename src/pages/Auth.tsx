@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Building2, Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { translateAuthError } from '@/utils/authErrors';
 
 const Auth = () => {
   const { user, signIn, signUp, sendMagicLink } = useAuth();
@@ -56,7 +57,7 @@ const Auth = () => {
     if (error) {
       toast({
         title: 'Error al iniciar sesión',
-        description: error.message,
+        description: translateAuthError(error),
         variant: 'destructive',
       });
     } else {
@@ -89,7 +90,7 @@ const Auth = () => {
     if (error) {
       toast({
         title: 'Error al registrarse',
-        description: error.message,
+        description: translateAuthError(error),
         variant: 'destructive',
       });
     } else {
@@ -112,7 +113,7 @@ const Auth = () => {
     if (error) {
       toast({
         title: 'Error al enviar enlace',
-        description: error.message,
+        description: translateAuthError(error),
         variant: 'destructive',
       });
     } else {

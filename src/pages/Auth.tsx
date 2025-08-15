@@ -21,6 +21,7 @@ const Auth = () => {
   const [nombreCompleto, setNombreCompleto] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
 
   if (user) {
     return <Navigate to="/dashboard" replace />;
@@ -72,8 +73,9 @@ const Auth = () => {
         variant: 'destructive',
       });
     } else {
+      setEmailSent(true);
       toast({
-        title: 'Registro exitoso',
+        title: 'Cuenta creada exitosamente',
         description: 'Revisa tu email para confirmar tu cuenta',
       });
     }
@@ -127,15 +129,47 @@ const Auth = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="signup" className="space-y-4">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="signup">Registrarse</TabsTrigger>
-                <TabsTrigger value="signin">Ingresar</TabsTrigger>
-              </TabsList>
+            {emailSent ? (
+              <div className="text-center py-8 space-y-4">
+                <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                  <Mail className="h-8 w-8 text-green-600" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-xl font-semibold text-foreground">¡Cuenta creada exitosamente!</h3>
+                  <p className="text-muted-foreground">
+                    Hemos enviado un email de confirmación a:
+                  </p>
+                  <p className="font-medium text-primary">{email}</p>
+                  <p className="text-sm text-muted-foreground">
+                    Revisa tu bandeja de entrada y haz click en el enlace para activar tu cuenta.
+                  </p>
+                </div>
+                <div className="pt-4">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setEmailSent(false);
+                      setEmail('');
+                      setPassword('');
+                      setConfirmPassword('');
+                      setNombreCompleto('');
+                    }}
+                    className="w-full"
+                  >
+                    Crear otra cuenta
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <Tabs defaultValue="signup" className="space-y-4">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="signup">Registrarse</TabsTrigger>
+                  <TabsTrigger value="signin">Ingresar</TabsTrigger>
+                </TabsList>
 
-              {/* Sign Up Tab */}
-              <TabsContent value="signup">
-                <form onSubmit={handleSignUp} className="space-y-4">
+                {/* Sign Up Tab */}
+                <TabsContent value="signup">
+                  <form onSubmit={handleSignUp} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="signup-name">Nombre Completo</Label>
                     <div className="relative">
@@ -267,6 +301,7 @@ const Auth = () => {
                 </form>
               </TabsContent>
             </Tabs>
+            )}
 
             <div className="mt-6 text-center">
               <Link to="/" className="text-sm text-primary hover:underline">

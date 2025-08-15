@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,26 @@ const Auth = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [emailConfirmed, setEmailConfirmed] = useState(false);
+  const [activeTab, setActiveTab] = useState<'signup' | 'signin'>('signup');
+
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash) {
+      const params = new URLSearchParams(hash.replace(/^#/, ''));
+      const type = params.get('type');
+      if (type === 'signup') {
+        setEmailConfirmed(true);
+        setActiveTab('signin');
+        toast({
+          title: 'Correo confirmado',
+          description: 'Tu cuenta está activa. Ingresa con tus credenciales.',
+        });
+        // Clean URL hash
+        window.history.replaceState(null, '', window.location.pathname);
+      }
+    }
+  }, []);
 
   if (user) {
     return <Navigate to="/dashboard" replace />;
@@ -161,7 +181,14 @@ const Auth = () => {
                 </div>
               </div>
             ) : (
-              <Tabs defaultValue="signup" className="space-y-4">
+              <>
+                {emailConfirmed && (
+                  <div className="text-center p-4 rounded-md border bg-primary/5 text-foreground">
+                    <p className="font-medium text-primary">Correo confirmado</p>
+                    <p className="text-sm text-muted-foreground">Tu cuenta está activa. Ingresa con tus credenciales.</p>
+                  </div>
+                )}
+                <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'signup' | 'signin')} className="space-y-4">
                 <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="signup">Registrarse</TabsTrigger>
                   <TabsTrigger value="signin">Ingresar</TabsTrigger>
@@ -300,7 +327,8 @@ const Auth = () => {
                   </Button>
                 </form>
               </TabsContent>
-            </Tabs>
+              </Tabs>
+              </>
             )}
 
             <div className="mt-6 text-center">

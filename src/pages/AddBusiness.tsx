@@ -94,56 +94,14 @@ const AddBusiness = () => {
 
       if (negocioError) throw negocioError;
 
-      // Get the rubro name to determine permit codes
-      const selectedRubro = rubros.find(r => r.id === rubroId);
-      const permitCodes = selectedRubro ? getPermitCodesForRubro(selectedRubro.nombre) : [];
-
-      if (permitCodes.length === 0) {
-        toast({
-          title: "Negocio creado",
-          description: "No se encontraron permisos para este tipo de negocio. Puedes agregarlos manualmente.",
-          variant: "default",
-        });
-        navigate('/dashboard');
-        return;
-      }
-
-      // Fetch the permit details for the required codes
-      const { data: permits, error: permitsError } = await supabase
-        .from('permisos')
-        .select('id, nombre, vigencia_meses')
-        .in('nombre', permitCodes);
-
-      if (permitsError) throw permitsError;
-
-      // Create permits for the business with the new structure
-      if (permits && permits.length > 0) {
-        const today = new Date();
-        const permisosToInsert = permits.map(permit => ({
-          negocio_id: negocio.id,
-          permiso_id: permit.id,
-          estado: 'pendiente',
-          status: 'required',
-          fecha_emision: today.toISOString().split('T')[0],
-          fecha_vencimiento: permit.vigencia_meses && permit.vigencia_meses > 0
-            ? new Date(today.getTime() + permit.vigencia_meses * 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-            : null,
-          proximo_paso: 'Iniciar trámite en la municipalidad correspondiente',
-        }));
-
-        const { error: permisosError } = await supabase
-          .from('permisos_negocio')
-          .insert(permisosToInsert);
-
-        if (permisosError) throw permisosError;
-      }
+      // DO NOT pre-attach permits - they will be added via document upload
 
       toast({
         title: 'Negocio creado exitosamente',
-        description: `${nombre} ha sido agregado con ${permits?.length || 0} permisos asignados`,
+        description: `${nombre} ha sido agregado. Ahora puedes subir tus permisos.`,
       });
 
-      navigate('/dashboard');
+      navigate(`/negocios/${negocio.id}`);
     } catch (error: any) {
       console.error('Error creating business:', error);
       toast({

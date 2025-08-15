@@ -4,11 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ArrowLeft, Building2, MapPin, Tag, Calendar, FileText, AlertCircle, CheckCircle, Clock, XCircle } from 'lucide-react';
+import { ArrowLeft, Building2, MapPin, Tag, Calendar, FileText, AlertCircle, CheckCircle, Clock, XCircle, Plus, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 import Layout from '@/components/Layout';
 import PermitUploader from '@/components/PermitUploader';
+import ManualPermitModal from '@/components/ManualPermitModal';
 
 interface BusinessDetails {
   id: string;
@@ -37,9 +39,11 @@ interface PermitDetails {
 const BusinessDetails = () => {
   const { businessId } = useParams<{ businessId: string }>();
   const { user } = useAuth();
+  const { toast } = useToast();
   const [business, setBusiness] = useState<BusinessDetails | null>(null);
   const [permits, setPermits] = useState<PermitDetails[]>([]);
   const [loading, setLoading] = useState(true);
+  const [manualPermitModalOpen, setManualPermitModalOpen] = useState(false);
 
   useEffect(() => {
     if (businessId && user) {
@@ -102,6 +106,59 @@ const BusinessDetails = () => {
 
   const handlePermitAdded = () => {
     fetchBusinessPermits();
+  };
+
+  const deletePermit = async (permitId: string) => {
+    try {
+      // First, get all documents associated with this permit
+      const { data: documents } = await supabase
+        .from('documentos')
+        .select('url_archivo')
+        .eq('permiso_negocio_id', permitId);
+
+      // Delete files from storage
+      if (documents && documents.length > 0) {
+        for (const doc of documents) {
+          if (doc.url_archivo) {
+            const filePath = doc.url_arquivo.split('/').pop();
+            if (filePath) {
+              await supabase.storage
+                .from('documentos')
+                .remove([`docs/${businessId}/${filePath}`]);
+            }
+          }
+        }
+      }
+
+      // Delete documents records
+      await supabase
+        .from('documentos')
+        .delete()
+        .eq('permiso_negocio_id', permitId);
+
+      // Delete permit record
+      const { error } = await supabase
+        .from('permisos_negocio')
+        .delete()
+        .eq('id', permitId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Permiso eliminado',
+        description: 'El permiso y sus documentos han sido eliminados.',
+      });
+
+      fetchBusinessPermits();
+
+    } catch (error: any) {
+      console.error('Error deleting permit:', error);
+      toast({
+        title: 'Error',
+        description: 'No se pudo eliminar el permiso.',
+        variant: 'destructive',
+      });
+    }
   };
 
   const getEstadoBadge = (estado: string, status?: string | null) => {
@@ -237,9 +294,18 @@ const BusinessDetails = () => {
         {/* Permits Table */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Permisos del Negocio
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Permisos del Negocio
+              </div>
+              <Button 
+                onClick={() => setManualPermitModalOpen(true)}
+                size="sm"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Agregar Permiso
+              </Button>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -261,6 +327,7 @@ const BusinessDetails = () => {
                       <TableHead>Fecha Emisión</TableHead>
                       <TableHead>Fecha Vencimiento</TableHead>
                       <TableHead>Documentos</TableHead>
+                      <TableHead>Acciones</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -284,6 +351,16 @@ const BusinessDetails = () => {
                             <span className="text-sm text-muted-foreground">Sin documentos</span>
                           )}
                         </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => deletePermit(permit.id)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -292,6 +369,14 @@ const BusinessDetails = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Manual Permit Modal */}
+        <ManualPermitModal
+          isOpen={manualPermitModalOpen}
+          onClose={() => setManualPermitModalOpen(false)}
+          businessId={business.id}
+          onPermitAdded={handlePermitAdded}
+        />
       </div>
     </Layout>
   );

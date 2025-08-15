@@ -337,8 +337,8 @@ const PermitUploader: React.FC<PermitUploaderProps> = ({ businessId, businessNam
 
       if (docError) throw docError;
 
-      // Update or create business permit
-      const { error: permitBusinessError } = await supabase
+      // Create or update business permit
+      const { data: businessPermit, error: permitBusinessError } = await supabase
         .from('permisos_negocio')
         .upsert({
           negocio_id: businessId,
@@ -350,7 +350,9 @@ const PermitUploader: React.FC<PermitUploaderProps> = ({ businessId, businessNam
           proximo_paso: 'Documento subido y aprobado'
         }, {
           onConflict: 'negocio_id,permiso_id'
-        });
+        })
+        .select()
+        .single();
 
       if (permitBusinessError) throw permitBusinessError;
 

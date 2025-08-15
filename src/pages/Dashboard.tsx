@@ -43,7 +43,10 @@ const Dashboard = () => {
           fecha_vencimiento,
           proximo_paso,
           permisos (nombre),
-          negocios (nombre)
+          negocios!inner (
+            nombre,
+            user_id
+          )
         `)
         .eq('negocios.user_id', user?.id);
 

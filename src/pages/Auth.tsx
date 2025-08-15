@@ -113,75 +113,11 @@ const Auth = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="magic-link" className="space-y-4">
-              <TabsList className="grid w-full grid-cols-3 text-xs">
-                <TabsTrigger value="magic-link">Enlace</TabsTrigger>
-                <TabsTrigger value="signin">Ingresar</TabsTrigger>
+            <Tabs defaultValue="signup" className="space-y-4">
+              <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="signup">Registrarse</TabsTrigger>
+                <TabsTrigger value="signin">Ingresar</TabsTrigger>
               </TabsList>
-
-              {/* Magic Link Tab */}
-              <TabsContent value="magic-link">
-                <form onSubmit={handleMagicLink} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="magic-email">Email</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="magic-email"
-                        type="email"
-                        placeholder="tu@email.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="pl-10"
-                        required
-                      />
-                    </div>
-                  </div>
-                  <Button type="submit" className="w-full" size="lg" disabled={loading}>
-                    {loading ? 'Enviando...' : 'Enviar Enlace Mágico'}
-                  </Button>
-                </form>
-              </TabsContent>
-
-              {/* Sign In Tab */}
-              <TabsContent value="signin">
-                <form onSubmit={handleSignIn} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="signin-email">Email</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="signin-email"
-                        type="email"
-                        placeholder="tu@email.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="pl-10"
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signin-password">Contraseña</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="signin-password"
-                        type="password"
-                        placeholder="••••••••"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="pl-10"
-                        required
-                      />
-                    </div>
-                  </div>
-                  <Button type="submit" className="w-full" size="lg" disabled={loading}>
-                    {loading ? 'Ingresando...' : 'Ingresar'}
-                  </Button>
-                </form>
-              </TabsContent>
 
               {/* Sign Up Tab */}
               <TabsContent value="signup">
@@ -234,6 +170,45 @@ const Auth = () => {
                   </div>
                   <Button type="submit" className="w-full" size="lg" disabled={loading}>
                     {loading ? 'Creando cuenta...' : 'Crear Cuenta'}
+                  </Button>
+                </form>
+              </TabsContent>
+
+              {/* Sign In Tab */}
+              <TabsContent value="signin">
+                <form onSubmit={handleSignIn} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="signin-email">Email</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="signin-email"
+                        type="email"
+                        placeholder="tu@email.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="pl-10"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signin-password">Contraseña</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="signin-password"
+                        type="password"
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="pl-10"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <Button type="submit" className="w-full" size="lg" disabled={loading}>
+                    {loading ? 'Ingresando...' : 'Ingresar'}
                   </Button>
                 </form>
               </TabsContent>

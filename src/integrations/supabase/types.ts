@@ -155,31 +155,37 @@ export type Database = {
         Row: {
           created_at: string
           estado: string | null
+          fecha_emision: string | null
           fecha_vencimiento: string | null
           id: string
           negocio_id: string
           permiso_id: string
           proximo_paso: string | null
+          status: string | null
           updated_at: string
         }
         Insert: {
           created_at?: string
           estado?: string | null
+          fecha_emision?: string | null
           fecha_vencimiento?: string | null
           id?: string
           negocio_id: string
           permiso_id: string
           proximo_paso?: string | null
+          status?: string | null
           updated_at?: string
         }
         Update: {
           created_at?: string
           estado?: string | null
+          fecha_emision?: string | null
           fecha_vencimiento?: string | null
           id?: string
           negocio_id?: string
           permiso_id?: string
           proximo_paso?: string | null
+          status?: string | null
           updated_at?: string
         }
         Relationships: [

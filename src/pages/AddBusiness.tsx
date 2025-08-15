@@ -62,6 +62,16 @@ const AddBusiness = () => {
     }
   };
 
+  // Define permit mappings for each rubro
+  const getPermitCodesForRubro = (rubroNombre: string): string[] => {
+    const mappings: Record<string, string[]> = {
+      'Café': ['PAT_MUN', 'RES_SAN', 'CERT_BOM', 'SII_INIT', 'PER_ANU'],
+      'Peluquería': ['PAT_MUN', 'RES_SAN', 'SII_INIT'],
+      'Minimarket': ['PAT_MUN', 'RES_SAN', 'CERT_BOM', 'SII_INIT'],
+    };
+    return mappings[rubroNombre] || [];
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
@@ -84,28 +94,40 @@ const AddBusiness = () => {
 
       if (negocioError) throw negocioError;
 
-      // Get the permit rules for this rubro
-      const { data: reglas, error: reglasError } = await supabase
-        .from('reglas_permisos')
-        .select(`
-          permiso_id,
-          es_obligatorio,
-          permisos (
-            nombre,
-            vigencia_meses
-          )
-        `)
-        .eq('rubro_id', rubroId);
+      // Get the rubro name to determine permit codes
+      const selectedRubro = rubros.find(r => r.id === rubroId);
+      const permitCodes = selectedRubro ? getPermitCodesForRubro(selectedRubro.nombre) : [];
 
-      if (reglasError) throw reglasError;
+      if (permitCodes.length === 0) {
+        toast({
+          title: "Negocio creado",
+          description: "No se encontraron permisos para este tipo de negocio. Puedes agregarlos manualmente.",
+          variant: "default",
+        });
+        navigate('/dashboard');
+        return;
+      }
 
-      // Create the business permits based on the rules
-      if (reglas && reglas.length > 0) {
-        const permisosToInsert = reglas.map(regla => ({
+      // Fetch the permit details for the required codes
+      const { data: permits, error: permitsError } = await supabase
+        .from('permisos')
+        .select('id, nombre, vigencia_meses')
+        .in('nombre', permitCodes);
+
+      if (permitsError) throw permitsError;
+
+      // Create permits for the business with the new structure
+      if (permits && permits.length > 0) {
+        const today = new Date();
+        const permisosToInsert = permits.map(permit => ({
           negocio_id: negocio.id,
-          permiso_id: regla.permiso_id,
+          permiso_id: permit.id,
           estado: 'pendiente',
-          fecha_vencimiento: null,
+          status: 'required',
+          fecha_emision: today.toISOString().split('T')[0],
+          fecha_vencimiento: permit.vigencia_meses && permit.vigencia_meses > 0
+            ? new Date(today.getTime() + permit.vigencia_meses * 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+            : null,
           proximo_paso: 'Iniciar trámite en la municipalidad correspondiente',
         }));
 
@@ -118,7 +140,7 @@ const AddBusiness = () => {
 
       toast({
         title: 'Negocio creado exitosamente',
-        description: `${nombre} ha sido agregado con sus permisos correspondientes`,
+        description: `${nombre} ha sido agregado con ${permits?.length || 0} permisos asignados`,
       });
 
       navigate('/dashboard');

@@ -14,7 +14,281 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      comunas: {
+        Row: {
+          created_at: string
+          id: string
+          nombre: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nombre: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nombre?: string
+        }
+        Relationships: []
+      }
+      documentos: {
+        Row: {
+          created_at: string
+          id: string
+          nombre: string
+          permiso_negocio_id: string | null
+          tamaño_archivo: number | null
+          tipo_archivo: string
+          url_archivo: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nombre: string
+          permiso_negocio_id?: string | null
+          tamaño_archivo?: number | null
+          tipo_archivo: string
+          url_archivo: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nombre?: string
+          permiso_negocio_id?: string | null
+          tamaño_archivo?: number | null
+          tipo_archivo?: string
+          url_archivo?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documentos_permiso_negocio_id_fkey"
+            columns: ["permiso_negocio_id"]
+            isOneToOne: false
+            referencedRelation: "permisos_negocio"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      negocios: {
+        Row: {
+          comuna_id: string
+          created_at: string
+          direccion: string
+          id: string
+          nombre: string
+          rubro_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          comuna_id: string
+          created_at?: string
+          direccion: string
+          id?: string
+          nombre: string
+          rubro_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          comuna_id?: string
+          created_at?: string
+          direccion?: string
+          id?: string
+          nombre?: string
+          rubro_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "negocios_comuna_id_fkey"
+            columns: ["comuna_id"]
+            isOneToOne: false
+            referencedRelation: "comunas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "negocios_rubro_id_fkey"
+            columns: ["rubro_id"]
+            isOneToOne: false
+            referencedRelation: "rubros"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      permisos: {
+        Row: {
+          created_at: string
+          descripcion: string | null
+          es_obligatorio: boolean | null
+          id: string
+          nombre: string
+          updated_at: string
+          vigencia_meses: number | null
+        }
+        Insert: {
+          created_at?: string
+          descripcion?: string | null
+          es_obligatorio?: boolean | null
+          id?: string
+          nombre: string
+          updated_at?: string
+          vigencia_meses?: number | null
+        }
+        Update: {
+          created_at?: string
+          descripcion?: string | null
+          es_obligatorio?: boolean | null
+          id?: string
+          nombre?: string
+          updated_at?: string
+          vigencia_meses?: number | null
+        }
+        Relationships: []
+      }
+      permisos_negocio: {
+        Row: {
+          created_at: string
+          estado: string | null
+          fecha_vencimiento: string | null
+          id: string
+          negocio_id: string
+          permiso_id: string
+          proximo_paso: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          estado?: string | null
+          fecha_vencimiento?: string | null
+          id?: string
+          negocio_id: string
+          permiso_id: string
+          proximo_paso?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          estado?: string | null
+          fecha_vencimiento?: string | null
+          id?: string
+          negocio_id?: string
+          permiso_id?: string
+          proximo_paso?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "permisos_negocio_negocio_id_fkey"
+            columns: ["negocio_id"]
+            isOneToOne: false
+            referencedRelation: "negocios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permisos_negocio_permiso_id_fkey"
+            columns: ["permiso_id"]
+            isOneToOne: false
+            referencedRelation: "permisos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          alertas_activas: boolean | null
+          created_at: string
+          id: string
+          nombre_completo: string | null
+          telefono_whatsapp: string | null
+          tipo_notificacion: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          alertas_activas?: boolean | null
+          created_at?: string
+          id?: string
+          nombre_completo?: string | null
+          telefono_whatsapp?: string | null
+          tipo_notificacion?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          alertas_activas?: boolean | null
+          created_at?: string
+          id?: string
+          nombre_completo?: string | null
+          telefono_whatsapp?: string | null
+          tipo_notificacion?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      reglas_permisos: {
+        Row: {
+          created_at: string
+          es_obligatorio: boolean | null
+          id: string
+          permiso_id: string
+          rubro_id: string
+        }
+        Insert: {
+          created_at?: string
+          es_obligatorio?: boolean | null
+          id?: string
+          permiso_id: string
+          rubro_id: string
+        }
+        Update: {
+          created_at?: string
+          es_obligatorio?: boolean | null
+          id?: string
+          permiso_id?: string
+          rubro_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reglas_permisos_permiso_id_fkey"
+            columns: ["permiso_id"]
+            isOneToOne: false
+            referencedRelation: "permisos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reglas_permisos_rubro_id_fkey"
+            columns: ["rubro_id"]
+            isOneToOne: false
+            referencedRelation: "rubros"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rubros: {
+        Row: {
+          created_at: string
+          id: string
+          nombre: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nombre: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nombre?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

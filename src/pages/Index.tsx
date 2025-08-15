@@ -50,16 +50,11 @@ const Index = () => {
           <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto">
             Gestiona todos los permisos de tu negocio en Santiago de forma simple y organizada
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex justify-center">
             <Link to="/auth">
-              <Button size="lg" className="text-lg px-8 py-3 w-full sm:w-auto">
+              <Button size="lg" className="text-lg px-8 py-3">
                 Comenzar Ahora
                 <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            </Link>
-            <Link to="/auth">
-              <Button variant="outline" size="lg" className="text-lg px-8 py-3 w-full sm:w-auto">
-                Iniciar Sesión
               </Button>
             </Link>
           </div>

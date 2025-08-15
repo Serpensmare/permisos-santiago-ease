@@ -8,6 +8,7 @@ import { Building2, Plus, Upload, AlertCircle, CheckCircle, Clock, XCircle } fro
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import Layout from '@/components/Layout';
+import SuspendedAccount from '@/components/SuspendedAccount';
 
 interface PermisoNegocio {
   id: string;
@@ -27,6 +28,7 @@ const Dashboard = () => {
   const { user } = useAuth();
   const [permisosNegocios, setPermisosNegocios] = useState<PermisoNegocio[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isSuspended, setIsSuspended] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -36,6 +38,9 @@ const Dashboard = () => {
 
   const fetchPermisosNegocios = async () => {
     try {
+      // For now, skip suspension check since negocios doesn't have estado column
+      // This would be implemented when adding payment/suspension functionality
+
       const { data, error } = await supabase
         .from('permisos_negocio')
         .select(`
@@ -85,6 +90,10 @@ const Dashboard = () => {
     if (!fecha) return 'No definida';
     return new Date(fecha).toLocaleDateString('es-CL');
   };
+
+  if (isSuspended) {
+    return <SuspendedAccount />;
+  }
 
   if (loading) {
     return (

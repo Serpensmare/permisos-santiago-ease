@@ -120,7 +120,7 @@ const BusinessDetails = () => {
       if (documents && documents.length > 0) {
         for (const doc of documents) {
           if (doc.url_archivo) {
-            const filePath = doc.url_arquivo.split('/').pop();
+            const filePath = doc.url_archivo.split('/').pop();
             if (filePath) {
               await supabase.storage
                 .from('documentos')

@@ -320,24 +320,7 @@ const PermitUploader: React.FC<PermitUploaderProps> = ({ businessId, businessNam
 
       if (permitError) throw permitError;
 
-      // Create document record
-      const { data: document, error: docError } = await supabase
-        .from('documentos')
-        .insert({
-          user_id: user?.id,
-          negocio_id: businessId,
-          nombre: file.file.name,
-          tipo_archivo: file.file.type,
-          url_archivo: file.url,
-          tamaño_archivo: file.file.size,
-          label: permitInfo.name
-        })
-        .select()
-        .single();
-
-      if (docError) throw docError;
-
-      // Create or update business permit
+      // Create or update business permit first
       const { data: businessPermit, error: permitBusinessError } = await supabase
         .from('permisos_negocio')
         .upsert({
@@ -355,6 +338,24 @@ const PermitUploader: React.FC<PermitUploaderProps> = ({ businessId, businessNam
         .single();
 
       if (permitBusinessError) throw permitBusinessError;
+
+      // Create document record with permit reference
+      const { data: document, error: docError } = await supabase
+        .from('documentos')
+        .insert({
+          user_id: user?.id,
+          negocio_id: businessId,
+          permiso_negocio_id: businessPermit?.id,
+          nombre: file.file.name,
+          tipo_archivo: file.file.type,
+          url_archivo: file.url,
+          tamaño_archivo: file.file.size,
+          label: permitInfo.name
+        })
+        .select()
+        .single();
+
+      if (docError) throw docError;
 
       setUploadedFiles(prev => prev.map(f => 
         f.id === fileId ? { ...f, status: 'confirmed' } : f
@@ -440,163 +441,151 @@ const PermitUploader: React.FC<PermitUploaderProps> = ({ businessId, businessNam
     }
   };
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Upload className="h-5 w-5" />
-          Sube tus permisos aquí
-        </CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Arrastra y suelta archivos PDF o imágenes de tus permisos. Los detectaremos automáticamente.
-        </p>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Drop Zone */}
-        <div
-          {...getRootProps()}
-          className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer ${
-            isDragActive 
-              ? 'border-primary bg-primary/5' 
-              : 'border-muted-foreground/25 hover:border-primary/50'
-          }`}
-        >
-          <input {...getInputProps()} />
-          <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-          <p className="text-lg font-medium mb-2">
-            {isDragActive ? 'Suelta los archivos aquí' : 'Arrastra archivos aquí'}
-          </p>
-          <p className="text-sm text-muted-foreground mb-4">
-            o haz clic para seleccionar archivos
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Formatos soportados: PDF, JPG, PNG (máx. 10MB)
-          </p>
-        </div>
+  const editingFile = editingFileId ? uploadedFiles.find(f => f.id === editingFileId) : null;
 
-        {/* Uploaded Files */}
-        {uploadedFiles.length > 0 && (
-          <div className="space-y-3">
-            <h3 className="font-medium">Archivos subidos</h3>
-            {uploadedFiles.map((file) => (
-              <Card key={file.id} className="p-4">
-                <div className="flex items-start gap-3">
-                  <div className="flex-shrink-0">
-                    {file.file.type.startsWith('image/') ? (
-                      <Image className="h-8 w-8 text-blue-600" />
-                    ) : (
-                      <FileText className="h-8 w-8 text-red-600" />
-                    )}
-                  </div>
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="font-medium truncate">{file.file.name}</p>
-                      <div className="flex items-center gap-2">
-                        {getStatusIcon(file.status)}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeFile(file.id)}
-                          className="h-6 w-6 p-0"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
+  return (
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Upload className="h-5 w-5" />
+            Sube tus permisos aquí
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Arrastra y suelta archivos PDF o imágenes de tus permisos. Los detectaremos automáticamente.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Drop Zone */}
+          <div
+            {...getRootProps()}
+            className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer ${
+              isDragActive 
+                ? 'border-primary bg-primary/5' 
+                : 'border-muted-foreground/25 hover:border-primary/50'
+            }`}
+          >
+            <input {...getInputProps()} />
+            <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+            <p className="text-lg font-medium mb-2">
+              {isDragActive ? 'Suelta los archivos aquí' : 'Arrastra archivos aquí'}
+            </p>
+            <p className="text-sm text-muted-foreground mb-4">
+              o haz clic para seleccionar archivos
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Formatos soportados: PDF, JPG, PNG (máx. 10MB)
+            </p>
+          </div>
+
+          {/* Uploaded Files */}
+          {uploadedFiles.length > 0 && (
+            <div className="space-y-3">
+              <h3 className="font-medium">Archivos subidos</h3>
+              {uploadedFiles.map((file) => (
+                <Card key={file.id} className="p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0">
+                      {file.file.type.startsWith('image/') ? (
+                        <Image className="h-8 w-8 text-blue-600" />
+                      ) : (
+                        <FileText className="h-8 w-8 text-red-600" />
+                      )}
                     </div>
                     
-                    <p className="text-sm text-muted-foreground mb-2">
-                      {getStatusText(file)}
-                    </p>
-                    
-                    {file.status !== 'confirmed' && file.status !== 'error' && (
-                      <Progress value={file.progress} className="h-2" />
-                    )}
-                    
-                    {file.detectedPermit && file.status === 'detected' && (
-                      <div className="mt-3 p-3 bg-secondary rounded-lg">
-                        <div className="flex items-center justify-between mb-2">
-                          <Badge variant="secondary">{file.detectedPermit.name}</Badge>
-                          <span className="text-xs text-muted-foreground">
-                            Confianza: {Math.round(file.detectedPermit.confidence * 100)}%
-                          </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="font-medium truncate">{file.file.name}</p>
+                        <div className="flex items-center gap-2">
+                          {getStatusIcon(file.status)}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeFile(file.id)}
+                            className="h-6 w-6 p-0"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
                         </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">{getStatusText(file)}</span>
+                          <span className="text-muted-foreground">{file.progress}%</span>
+                        </div>
+                        <Progress value={file.progress} className="h-2" />
                         
-                        {(file.detectedPermit.issueDate || file.detectedPermit.expiryDate) && (
-                          <div className="text-xs text-muted-foreground mb-3">
-                            {file.detectedPermit.issueDate && (
-                              <p>Emisión: {file.detectedPermit.issueDate.toLocaleDateString('es-CL')}</p>
-                            )}
-                            {file.detectedPermit.expiryDate && (
-                              <p>Vencimiento: {file.detectedPermit.expiryDate.toLocaleDateString('es-CL')}</p>
-                            )}
+                        {file.status === 'detected' && file.detectedPermit && (
+                          <div className="flex gap-2 mt-3">
+                            <Button
+                              size="sm"
+                              onClick={() => confirmPermit(file.id)}
+                              className="flex items-center gap-2"
+                            >
+                              <Check className="h-3 w-3" />
+                              Confirmar
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => openEditModal(file.id)}
+                              className="flex items-center gap-2"
+                            >
+                              <Edit className="h-3 w-3" />
+                              Editar
+                            </Button>
                           </div>
                         )}
                         
-                        <div className="flex gap-2">
-                          <Button 
-                            size="sm" 
-                            onClick={() => confirmPermit(file.id)}
-                            className="flex-1"
-                          >
-                            <Check className="h-3 w-3 mr-1" />
-                            Confirmar
-                          </Button>
-                          <Button 
-                            size="sm" 
+                        {file.status === 'error' && (
+                          <Button
+                            size="sm"
                             variant="outline"
-                            className="flex-1"
                             onClick={() => openEditModal(file.id)}
+                            className="flex items-center gap-2 mt-3"
                           >
-                            <Edit className="h-3 w-3 mr-1" />
-                            Editar
+                            <Edit className="h-3 w-3" />
+                            Seleccionar manualmente
                           </Button>
-                        </div>
+                        )}
+                        
+                        {file.status === 'confirmed' && (
+                          <Badge variant="default" className="bg-green-600">
+                            <Check className="h-3 w-3 mr-1" />
+                            Confirmado
+                          </Badge>
+                        )}
                       </div>
-                    )}
-
-                    {file.status === 'error' && (
-                      <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-                        <p className="text-sm text-red-600 mb-3">{file.error}</p>
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => openEditModal(file.id)}
-                          className="w-full"
-                        >
-                          <Edit className="h-3 w-3 mr-2" />
-                          Seleccionar manualmente
-                        </Button>
-                      </div>
-                    )}
+                    </div>
                   </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-        )}
+                </Card>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-        {/* Edit Modal */}
-        {editingFileId && (
-          <PermitEditModal
-            isOpen={modalOpen}
-            onClose={() => {
-              setModalOpen(false);
-              setEditingFileId(null);
-            }}
-            onConfirm={handleModalConfirm}
-            onDelete={handleModalDelete}
-            fileName={uploadedFiles.find(f => f.id === editingFileId)?.file.name || ''}
-            initialData={uploadedFiles.find(f => f.id === editingFileId)?.detectedPermit ? {
-              type: uploadedFiles.find(f => f.id === editingFileId)?.detectedPermit?.type,
-              name: uploadedFiles.find(f => f.id === editingFileId)?.detectedPermit?.name,
-              issueDate: uploadedFiles.find(f => f.id === editingFileId)?.detectedPermit?.issueDate,
-              expiryDate: uploadedFiles.find(f => f.id === editingFileId)?.detectedPermit?.expiryDate,
-            } : undefined}
-          />
-        )}
-      </CardContent>
-    </Card>
+      {/* Edit Modal */}
+      {editingFile && (
+        <PermitEditModal
+          isOpen={modalOpen}
+          onClose={() => {
+            setModalOpen(false);
+            setEditingFileId(null);
+          }}
+          onConfirm={handleModalConfirm}
+          onDelete={handleModalDelete}
+          initialData={editingFile.detectedPermit ? {
+            type: editingFile.detectedPermit.type,
+            name: editingFile.detectedPermit.name,
+            issueDate: editingFile.detectedPermit.issueDate,
+            expiryDate: editingFile.detectedPermit.expiryDate
+          } : undefined}
+          fileName={editingFile.file.name}
+        />
+      )}
+    </>
   );
 };
 

@@ -11,6 +11,7 @@ import Layout from '@/components/Layout';
 
 interface PermisoNegocio {
   id: string;
+  negocio_id: string;
   estado: string;
   fecha_vencimiento: string | null;
   proximo_paso: string | null;
@@ -39,6 +40,7 @@ const Dashboard = () => {
         .from('permisos_negocio')
         .select(`
           id,
+          negocio_id,
           estado,
           fecha_vencimiento,
           proximo_paso,
@@ -216,7 +218,9 @@ const Dashboard = () => {
                     {permisosNegocios.map((permiso) => (
                       <TableRow key={permiso.id}>
                         <TableCell className="font-medium">
-                          {permiso.negocios.nombre}
+                          <Link to={`/negocios/${permiso.negocio_id}`} className="hover:underline text-primary">
+                            {permiso.negocios.nombre}
+                          </Link>
                         </TableCell>
                         <TableCell>{permiso.permisos.nombre}</TableCell>
                         <TableCell>{getEstadoBadge(permiso.estado)}</TableCell>
@@ -225,10 +229,10 @@ const Dashboard = () => {
                           {permiso.proximo_paso || 'No definido'}
                         </TableCell>
                         <TableCell>
-                          <Link to="/documentos">
+                          <Link to={`/negocios/${permiso.negocio_id}`}>
                             <Button size="sm" variant="outline">
                               <Upload className="h-3 w-3 mr-1" />
-                              Subir
+                              Gestionar
                             </Button>
                           </Link>
                         </TableCell>

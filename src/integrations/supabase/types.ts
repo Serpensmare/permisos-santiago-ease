@@ -36,6 +36,8 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          label: string | null
+          negocio_id: string | null
           nombre: string
           permiso_negocio_id: string | null
           tamaño_archivo: number | null
@@ -46,6 +48,8 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          label?: string | null
+          negocio_id?: string | null
           nombre: string
           permiso_negocio_id?: string | null
           tamaño_archivo?: number | null
@@ -56,6 +60,8 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          label?: string | null
+          negocio_id?: string | null
           nombre?: string
           permiso_negocio_id?: string | null
           tamaño_archivo?: number | null
@@ -64,6 +70,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "documentos_negocio_id_fkey"
+            columns: ["negocio_id"]
+            isOneToOne: false
+            referencedRelation: "negocios"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "documentos_permiso_negocio_id_fkey"
             columns: ["permiso_negocio_id"]

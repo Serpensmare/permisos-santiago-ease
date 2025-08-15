@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import AddBusiness from "./pages/AddBusiness";
+import BusinessDetails from "./pages/BusinessDetails";
 import Documents from "./pages/Documents";
 import Settings from "./pages/Settings";
 import Admin from "./pages/Admin";
@@ -35,6 +36,11 @@ const App = () => (
             <Route path="/negocios" element={
               <ProtectedRoute>
                 <AddBusiness />
+              </ProtectedRoute>
+            } />
+            <Route path="/negocios/:businessId" element={
+              <ProtectedRoute>
+                <BusinessDetails />
               </ProtectedRoute>
             } />
             <Route path="/documentos" element={

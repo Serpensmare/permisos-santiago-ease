@@ -9,6 +9,7 @@ import { Building2, Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { translateAuthError } from '@/utils/authErrors';
+import { supabase } from '@/integrations/supabase/client';
 
 const Auth = () => {
   const { user, signIn, signUp, sendMagicLink } = useAuth();
@@ -25,7 +26,8 @@ const Auth = () => {
   const [emailSent, setEmailSent] = useState(false);
   const [emailConfirmed, setEmailConfirmed] = useState(false);
   const [activeTab, setActiveTab] = useState<'signup' | 'signin'>('signup');
-
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [resending, setResending] = useState(false);
   useEffect(() => {
     const hash = window.location.hash;
     if (hash) {
@@ -43,6 +45,14 @@ const Auth = () => {
       }
     }
   }, []);
+
+  useEffect(() => {
+    if (!emailSent || resendCooldown <= 0) return;
+    const id = setInterval(() => {
+      setResendCooldown((s) => (s > 0 ? s - 1 : 0));
+    }, 1000);
+    return () => clearInterval(id);
+  }, [emailSent, resendCooldown]);
 
   if (user) {
     return <Navigate to="/dashboard" replace />;
@@ -95,6 +105,7 @@ const Auth = () => {
       });
     } else {
       setEmailSent(true);
+      setResendCooldown(30);
       toast({
         title: 'Cuenta creada exitosamente',
         description: 'Revisa tu email para confirmar tu cuenta',
@@ -124,6 +135,33 @@ const Auth = () => {
     }
 
     setLoading(false);
+  };
+
+  const handleResendConfirmation = async () => {
+    if (resending || resendCooldown > 0 || !email) return;
+    setResending(true);
+    const redirectUrl = `${window.location.origin}/auth`;
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email,
+      options: { emailRedirectTo: redirectUrl }
+    });
+
+    if (error) {
+      toast({
+        title: 'Error al reenviar',
+        description: translateAuthError(error),
+        variant: 'destructive',
+      });
+    } else {
+      setResendCooldown(30);
+      toast({
+        title: 'Correo reenviado',
+        description: 'Hemos enviado un nuevo enlace de confirmación.',
+      });
+    }
+
+    setResending(false);
   };
 
   return (
@@ -165,7 +203,15 @@ const Auth = () => {
                     Revisa tu bandeja de entrada y haz click en el enlace para activar tu cuenta.
                   </p>
                 </div>
-                <div className="pt-4">
+                <div className="space-y-3 pt-4">
+                  <p className="text-sm text-muted-foreground">El enlace de confirmación expira en 5 minutos.</p>
+                  <Button
+                    onClick={handleResendConfirmation}
+                    disabled={resending || resendCooldown > 0}
+                    className="w-full"
+                  >
+                    {resending ? 'Reenviando...' : resendCooldown > 0 ? `Reenviar en ${resendCooldown}s` : 'Reenviar correo de confirmación'}
+                  </Button>
                   <Button 
                     variant="outline" 
                     onClick={() => {

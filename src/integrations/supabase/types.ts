@@ -84,6 +84,13 @@ export type Database = {
             referencedRelation: "permisos_negocio"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_documentos_permiso_negocio"
+            columns: ["permiso_negocio_id"]
+            isOneToOne: false
+            referencedRelation: "permisos_negocio"
+            referencedColumns: ["id"]
+          },
         ]
       }
       negocios: {

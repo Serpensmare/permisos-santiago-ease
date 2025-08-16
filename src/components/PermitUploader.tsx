@@ -311,14 +311,17 @@ const PermitUploader: React.FC<PermitUploaderProps> = ({ businessId, businessNam
     if (!permitInfo) return;
 
     try {
-      // Get permit ID from database
+      // Get permit ID from database using the permit name
       const { data: permit, error: permitError } = await supabase
         .from('permisos')
         .select('id')
-        .eq('nombre', permitInfo.type)
+        .eq('nombre', permitInfo.name)
         .single();
 
-      if (permitError) throw permitError;
+      if (permitError) {
+        console.error('Permit not found, trying fallback:', permitError);
+        throw new Error(`No se encontró el permiso: ${permitInfo.name}`);
+      }
 
       // Create or update business permit first
       const { data: businessPermit, error: permitBusinessError } = await supabase

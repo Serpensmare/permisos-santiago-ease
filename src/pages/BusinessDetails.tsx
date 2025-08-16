@@ -144,11 +144,15 @@ const BusinessDetails = () => {
 
       if (error) throw error;
 
+      // Immediately update the UI by removing the deleted permit
+      setPermits(prevPermits => prevPermits.filter(permit => permit.id !== permitId));
+
       toast({
         title: 'Permiso eliminado',
         description: 'El permiso y sus documentos han sido eliminados.',
       });
 
+      // Also refresh the data to ensure consistency
       fetchBusinessPermits();
 
     } catch (error: any) {

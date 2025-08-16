@@ -86,7 +86,7 @@ const BusinessDetails = () => {
           fecha_vencimiento,
           status,
           permisos (nombre),
-          documentos:documentos!permiso_negocio_id (
+          documentos:documentos!fk_documentos_permiso_negocio (
             id,
             nombre,
             url_archivo,

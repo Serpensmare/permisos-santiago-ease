@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Building2, Plus, Upload, AlertCircle, CheckCircle, Clock, XCircle, Eye, FileText } from 'lucide-react';
+import { Building2, Plus, Upload, AlertCircle, CheckCircle, Clock, XCircle, Eye, FileText, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import Layout from '@/components/Layout';
@@ -116,6 +116,23 @@ const Dashboard = () => {
     } catch (error) {
       console.error('Error approving permiso:', error);
       toast.error('Error al aprobar el permiso');
+    }
+  };
+
+  const handleDeletePermiso = async (permisoId: string) => {
+    try {
+      const { error } = await supabase
+        .from('permisos_negocio')
+        .delete()
+        .eq('id', permisoId);
+
+      if (error) throw error;
+
+      toast.success('Permiso eliminado exitosamente');
+      fetchPermisosNegocios();
+    } catch (error: any) {
+      console.error('Error deleting permiso:', error);
+      toast.error('Error al eliminar el permiso');
     }
   };
 
@@ -292,6 +309,13 @@ const Dashboard = () => {
                                 Gestionar
                               </Button>
                             </Link>
+                            <Button 
+                              size="sm" 
+                              variant="destructive"
+                              onClick={() => handleDeletePermiso(permiso.id)}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
                           </div>
                         </TableCell>
                       </TableRow>

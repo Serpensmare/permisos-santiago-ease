@@ -4,11 +4,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Building2, Plus, Upload, AlertCircle, CheckCircle, Clock, XCircle } from 'lucide-react';
+import { Building2, Plus, Upload, AlertCircle, CheckCircle, Clock, XCircle, Eye, FileText } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import Layout from '@/components/Layout';
 import SuspendedAccount from '@/components/SuspendedAccount';
+import DocumentsModal from '@/components/DocumentsModal';
+import AddPermisoModal from '@/components/AddPermisoModal';
+import { toast } from 'sonner';
 
 interface PermisoNegocio {
   id: string;
@@ -29,6 +32,9 @@ const Dashboard = () => {
   const [permisosNegocios, setPermisosNegocios] = useState<PermisoNegocio[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSuspended, setIsSuspended] = useState(false);
+  const [documentsModalOpen, setDocumentsModalOpen] = useState(false);
+  const [selectedPermiso, setSelectedPermiso] = useState<PermisoNegocio | null>(null);
+  const [addPermisoModalOpen, setAddPermisoModalOpen] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -91,6 +97,28 @@ const Dashboard = () => {
     return new Date(fecha).toLocaleDateString('es-CL');
   };
 
+  const handleViewDocuments = (permiso: PermisoNegocio) => {
+    setSelectedPermiso(permiso);
+    setDocumentsModalOpen(true);
+  };
+
+  const handleApprovePermiso = async (permisoId: string) => {
+    try {
+      const { error } = await supabase
+        .from('permisos_negocio')
+        .update({ estado: 'aprobado' })
+        .eq('id', permisoId);
+
+      if (error) throw error;
+      
+      toast.success('Permiso aprobado exitosamente');
+      fetchPermisosNegocios();
+    } catch (error) {
+      console.error('Error approving permiso:', error);
+      toast.error('Error al aprobar el permiso');
+    }
+  };
+
   if (isSuspended) {
     return <SuspendedAccount />;
   }
@@ -119,12 +147,14 @@ const Dashboard = () => {
               Gestiona todos los permisos de tus negocios
             </p>
           </div>
-          <Link to="/negocios">
-            <Button size="lg" className="w-full sm:w-auto">
-              <Plus className="h-4 w-4 mr-2" />
-              Agregar Negocio
-            </Button>
-          </Link>
+          <Button 
+            size="lg" 
+            className="w-full sm:w-auto"
+            onClick={() => setAddPermisoModalOpen(true)}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Agregar Permiso
+          </Button>
         </div>
 
         {/* Quick Stats */}
@@ -238,12 +268,31 @@ const Dashboard = () => {
                           {permiso.proximo_paso || 'No definido'}
                         </TableCell>
                         <TableCell>
-                          <Link to={`/negocios/${permiso.negocio_id}`}>
-                            <Button size="sm" variant="outline">
-                              <Upload className="h-3 w-3 mr-1" />
-                              Gestionar
+                          <div className="flex space-x-2">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleViewDocuments(permiso)}
+                            >
+                              <Eye className="h-3 w-3 mr-1" />
+                              Ver
                             </Button>
-                          </Link>
+                            {permiso.estado === 'pendiente' && (
+                              <Button
+                                size="sm"
+                                onClick={() => handleApprovePermiso(permiso.id)}
+                              >
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                                Aprobar
+                              </Button>
+                            )}
+                            <Link to={`/negocios/${permiso.negocio_id}`}>
+                              <Button size="sm" variant="outline">
+                                <Upload className="h-3 w-3 mr-1" />
+                                Gestionar
+                              </Button>
+                            </Link>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -253,6 +302,32 @@ const Dashboard = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Add Business Button at Bottom */}
+        <div className="flex justify-center mt-8">
+          <Link to="/negocios">
+            <Button variant="outline" size="lg">
+              <Building2 className="h-4 w-4 mr-2" />
+              Agregar Negocio
+            </Button>
+          </Link>
+        </div>
+
+        {/* Modals */}
+        {selectedPermiso && (
+          <DocumentsModal
+            isOpen={documentsModalOpen}
+            onClose={() => setDocumentsModalOpen(false)}
+            permisoNegocioId={selectedPermiso.id}
+            permisoNombre={selectedPermiso.permisos.nombre}
+          />
+        )}
+        
+        <AddPermisoModal
+          isOpen={addPermisoModalOpen}
+          onClose={() => setAddPermisoModalOpen(false)}
+          onPermisoAdded={fetchPermisosNegocios}
+        />
       </div>
     </Layout>
   );

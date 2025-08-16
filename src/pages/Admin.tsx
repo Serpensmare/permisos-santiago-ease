@@ -299,6 +299,38 @@ const Admin = () => {
     }
   };
 
+  const handleDeleteNegocio = async (negocio: Negocio) => {
+    try {
+      const { error } = await supabase
+        .from('negocios')
+        .delete()
+        .eq('id', negocio.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Negocio eliminado',
+        description: `${negocio.nombre} ha sido eliminado`,
+      });
+
+      setEditingNegocio(null);
+      setNegocioForm({
+        nombre: '',
+        direccion: '',
+        comuna_id: '',
+        rubro_id: '',
+      });
+      fetchData();
+    } catch (error: any) {
+      console.error('Error deleting negocio:', error);
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
   const startEditingNegocio = (negocio: Negocio) => {
     setEditingNegocio(negocio);
     setNegocioForm({
@@ -694,6 +726,13 @@ const Admin = () => {
                       }}
                     >
                       Cancelar
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={() => editingNegocio && handleDeleteNegocio(editingNegocio)}
+                    >
+                      <Trash2 className="h-3 w-3 mr-1" />
+                      Eliminar
                     </Button>
                   </div>
                 </CardContent>

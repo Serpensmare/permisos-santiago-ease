@@ -194,22 +194,30 @@ const Documents = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="file-upload">Seleccionar archivo</Label>
-                <Input
-                  id="file-upload"
-                  type="file"
-                  accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                  onChange={handleFileUpload}
-                  disabled={uploading}
-                  className="cursor-pointer"
-                />
-                <p className="text-sm text-muted-foreground">
+              {/* Large Drag & Drop Area */}
+              <div className="relative">
+                <div className="border-2 border-dashed border-border rounded-lg p-12 text-center hover:border-primary/50 transition-colors bg-secondary/20">
+                  <Upload className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">Arrastra y suelta tu archivo aquí</h3>
+                  <p className="text-muted-foreground mb-4">o haz click para seleccionar</p>
+                  <Input
+                    id="file-upload"
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                    onChange={handleFileUpload}
+                    disabled={uploading}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  />
+                  <Button variant="outline" className="pointer-events-none">
+                    Seleccionar archivo
+                  </Button>
+                </div>
+                <p className="text-sm text-muted-foreground mt-2 text-center">
                   Formatos permitidos: PDF, JPG, PNG, DOC, DOCX (máx. 10MB)
                 </p>
               </div>
               {uploading && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground py-4">
                   <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full"></div>
                   Subiendo archivo...
                 </div>

@@ -7,9 +7,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Shield, Plus, Edit, Trash2, Building2, FileText } from 'lucide-react';
+import { Shield, Plus, Edit, Trash2, Building2, FileText, Settings } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import Layout from '@/components/Layout';
 
 interface Permiso {
@@ -25,6 +26,21 @@ interface Rubro {
   nombre: string;
 }
 
+interface Comuna {
+  id: string;
+  nombre: string;
+}
+
+interface Negocio {
+  id: string;
+  nombre: string;
+  direccion: string;
+  comuna_id: string;
+  rubro_id: string;
+  comunas: { nombre: string };
+  rubros: { nombre: string };
+}
+
 interface ReglaPermiso {
   id: string;
   rubro_id: string;
@@ -36,12 +52,16 @@ interface ReglaPermiso {
 
 const Admin = () => {
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState<'permisos' | 'reglas'>('permisos');
+  const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState<'permisos' | 'reglas' | 'negocios'>('permisos');
   const [permisos, setPermisos] = useState<Permiso[]>([]);
   const [rubros, setRubros] = useState<Rubro[]>([]);
+  const [comunas, setComunas] = useState<Comuna[]>([]);
   const [reglas, setReglas] = useState<ReglaPermiso[]>([]);
+  const [negocios, setNegocios] = useState<Negocio[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingPermiso, setEditingPermiso] = useState<Permiso | null>(null);
+  const [editingNegocio, setEditingNegocio] = useState<Negocio | null>(null);
 
   // Form states
   const [permisoForm, setPermisoForm] = useState({
@@ -57,29 +77,46 @@ const Admin = () => {
     es_obligatorio: true,
   });
 
+  const [negocioForm, setNegocioForm] = useState({
+    nombre: '',
+    direccion: '',
+    comuna_id: '',
+    rubro_id: '',
+  });
+
   useEffect(() => {
     fetchData();
   }, []);
 
   const fetchData = async () => {
     try {
-      const [permisosRes, rubrosRes, reglasRes] = await Promise.all([
+      const [permisosRes, rubrosRes, comunasRes, reglasRes, negociosRes] = await Promise.all([
         supabase.from('permisos').select('*').order('nombre'),
         supabase.from('rubros').select('*').order('nombre'),
+        supabase.from('comunas').select('*').order('nombre'),
         supabase.from('reglas_permisos').select(`
           *,
           rubros (nombre),
           permisos (nombre)
-        `).order('created_at', { ascending: false })
+        `).order('created_at', { ascending: false }),
+        supabase.from('negocios').select(`
+          *,
+          comunas (nombre),
+          rubros (nombre)
+        `).eq('user_id', user?.id).order('nombre')
       ]);
 
       if (permisosRes.error) throw permisosRes.error;
       if (rubrosRes.error) throw rubrosRes.error;
+      if (comunasRes.error) throw comunasRes.error;
       if (reglasRes.error) throw reglasRes.error;
+      if (negociosRes.error) throw negociosRes.error;
 
       setPermisos(permisosRes.data || []);
       setRubros(rubrosRes.data || []);
+      setComunas(comunasRes.data || []);
       setReglas(reglasRes.data || []);
+      setNegocios(negociosRes.data || []);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast({
@@ -228,6 +265,50 @@ const Admin = () => {
     });
   };
 
+  const handleSaveNegocio = async () => {
+    try {
+      if (!editingNegocio) return;
+
+      const { error } = await supabase
+        .from('negocios')
+        .update(negocioForm)
+        .eq('id', editingNegocio.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Negocio actualizado',
+        description: `${negocioForm.nombre} ha sido actualizado`,
+      });
+
+      setNegocioForm({
+        nombre: '',
+        direccion: '',
+        comuna_id: '',
+        rubro_id: '',
+      });
+      setEditingNegocio(null);
+      fetchData();
+    } catch (error: any) {
+      console.error('Error saving negocio:', error);
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const startEditingNegocio = (negocio: Negocio) => {
+    setEditingNegocio(negocio);
+    setNegocioForm({
+      nombre: negocio.nombre,
+      direccion: negocio.direccion,
+      comuna_id: negocio.comuna_id,
+      rubro_id: negocio.rubro_id,
+    });
+  };
+
   if (loading) {
     return (
       <Layout>
@@ -274,6 +355,14 @@ const Admin = () => {
           >
             <Building2 className="h-4 w-4" />
             Reglas por Rubro
+          </Button>
+          <Button
+            variant={activeTab === 'negocios' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('negocios')}
+            className="flex items-center gap-2"
+          >
+            <Settings className="h-4 w-4" />
+            Mis Negocios
           </Button>
         </div>
 
@@ -515,6 +604,151 @@ const Admin = () => {
                     </TableBody>
                   </Table>
                 </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Negocios Tab */}
+        {activeTab === 'negocios' && (
+          <div className="space-y-6">
+            {/* Edit Negocio Form */}
+            {editingNegocio && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Editar Negocio: {editingNegocio.nombre}</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="negocio-nombre">Nombre del Negocio</Label>
+                      <Input
+                        id="negocio-nombre"
+                        value={negocioForm.nombre}
+                        onChange={(e) => setNegocioForm(prev => ({ ...prev, nombre: e.target.value }))}
+                        placeholder="Nombre del negocio"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="negocio-comuna">Comuna</Label>
+                      <Select
+                        value={negocioForm.comuna_id}
+                        onValueChange={(value) => setNegocioForm(prev => ({ ...prev, comuna_id: value }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona una comuna" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {comunas.map((comuna) => (
+                            <SelectItem key={comuna.id} value={comuna.id}>
+                              {comuna.nombre}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="negocio-direccion">Dirección</Label>
+                      <Textarea
+                        id="negocio-direccion"
+                        value={negocioForm.direccion}
+                        onChange={(e) => setNegocioForm(prev => ({ ...prev, direccion: e.target.value }))}
+                        placeholder="Dirección completa del negocio"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="negocio-rubro">Tipo de Negocio</Label>
+                      <Select
+                        value={negocioForm.rubro_id}
+                        onValueChange={(value) => setNegocioForm(prev => ({ ...prev, rubro_id: value }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona el tipo de negocio" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {rubros.map((rubro) => (
+                            <SelectItem key={rubro.id} value={rubro.id}>
+                              {rubro.nombre}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button onClick={handleSaveNegocio}>
+                      Guardar Cambios
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setEditingNegocio(null);
+                        setNegocioForm({
+                          nombre: '',
+                          direccion: '',
+                          comuna_id: '',
+                          rubro_id: '',
+                        });
+                      }}
+                    >
+                      Cancelar
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Negocios List */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Mis Negocios</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {negocios.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">No tienes negocios registrados</h3>
+                    <p className="text-muted-foreground mb-4">
+                      Agrega tu primer negocio para comenzar a gestionar sus permisos
+                    </p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Nombre</TableHead>
+                          <TableHead>Dirección</TableHead>
+                          <TableHead>Comuna</TableHead>
+                          <TableHead>Tipo de Negocio</TableHead>
+                          <TableHead>Acciones</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {negocios.map((negocio) => (
+                          <TableRow key={negocio.id}>
+                            <TableCell className="font-medium">{negocio.nombre}</TableCell>
+                            <TableCell className="max-w-xs truncate">{negocio.direccion}</TableCell>
+                            <TableCell>{negocio.comunas.nombre}</TableCell>
+                            <TableCell>{negocio.rubros.nombre}</TableCell>
+                            <TableCell>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => startEditingNegocio(negocio)}
+                              >
+                                <Edit className="h-3 w-3 mr-1" />
+                                Editar
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
